@@ -25,6 +25,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $quiz_id = $_POST['quiz_id'];
         $question_text = $_POST['question_text'];
 
+        // Vérifier si un quiz a été sélectionné
+        if ($quiz_id === '') {
+            echo "Veuillez sélectionner un quiz.";
+            exit();
+        }
+
+        // Afficher les valeurs des variables pour déboguer
+        echo "Quiz ID: " . $quiz_id . "<br>";
+        echo "Question Text: " . $question_text . "<br>";
+
         $stmt = $conn->prepare("INSERT INTO questions (quiz_id, question_text) VALUES (:quiz_id, :question_text)");
         $stmt->bindParam(':quiz_id', $quiz_id);
         $stmt->bindParam(':question_text', $question_text);
@@ -60,10 +70,15 @@ $quizzes = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <form method="POST" class="space-y-4">
             <label for="quiz_id" class="block text-gray-700 font-medium">Sélectionnez le quiz :</label>
             <select name="quiz_id" id="quiz_id" class="w-full p-3 border border-gray-300 rounded-lg" required>
+                <option value="" disabled selected>Sélectionnez un quiz</option>
                 <?php foreach ($quizzes as $quiz): ?>
-                    <option value="<?php echo $quiz['id']; ?>"><?php echo htmlspecialchars($quiz['title']); ?></option>
+                    <?php $selected = ($_POST['quiz_id'] == $quiz['id']) ? 'selected' : ''; ?>
+                    <option value="<?php echo $quiz['id']; ?>" <?php echo $selected; ?>><?php echo htmlspecialchars($quiz['title']); ?></option>
                 <?php endforeach; ?>
             </select>
+            <?php if ($_SERVER['REQUEST_METHOD'] == 'POST' && empty($_POST['quiz_id'])): ?>
+                <p class="text-red-500">Veuillez sélectionner un quiz.</p>
+            <?php endif; ?>
             <textarea name="question_text" placeholder="Texte de la question" class="w-full p-3 border border-gray-300 rounded-lg" required></textarea>
             <button type="submit" name="create_question" class="w-full bg-purple-600 text-white p-3 rounded-lg font-bold hover:bg-purple-700 transition duration-300">Créer la question</button>
         </form>
