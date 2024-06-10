@@ -1,9 +1,8 @@
-// config.php
 <?php
 $servername = "localhost";
 $username = "root";
 $password = "root";
-$dbname = "quiz_db";
+$dbname = "quiznight";
 
 try {
     $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);

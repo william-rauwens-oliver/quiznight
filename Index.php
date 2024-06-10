@@ -1,6 +1,5 @@
-// index.php
 <?php
-include('config.php');
+include('Config.php');
 
 $stmt = $conn->prepare("SELECT * FROM quizzes");
 $stmt->execute();
