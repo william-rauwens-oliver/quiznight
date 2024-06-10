@@ -125,8 +125,9 @@ try {
                     echo "<div class='quiz'>";
                     echo "<h3>" . htmlspecialchars($quiz['title']) . "</h3>";
 
+                    // Récupération des questions du quiz en fonction de l'ID du quiz
                     $stmt_question = $conn->prepare("SELECT * FROM questions WHERE quiz_id = :quiz_id");
-                    $stmt_question->bindParam(':quiz_id', $quiz['id']);
+                    $stmt_question->bindParam(':quiz_id', $quiz['quiz_id']);
                     $stmt_question->execute();
                     $questions = $stmt_question->fetchAll(PDO::FETCH_ASSOC);
 
