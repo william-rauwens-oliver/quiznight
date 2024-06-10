@@ -52,12 +52,7 @@ $quizzes = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <form method="POST" class="space-y-4">
             <input type="text" name="title" placeholder="Titre du quiz" class="w-full p-3 border border-gray-300 rounded-lg" required>
             <textarea name="description" placeholder="Description du quiz" class="w-full p-3 border border-gray-300 rounded-lg" required></textarea>
-            <label for="theme" class="block text-gray-700 font-medium">Sélectionnez le thème :</label>
-            <select name="theme" id="theme" class="w-full p-3 border border-gray-300 rounded-lg" required>
-                <option value="animals">Animaux</option>
-                <option value="cars">Voitures</option>
-                <option value="computers">Ordinateurs</option>
-            </select>
+            <input type="text" name="theme" placeholder="Thème du quiz" class="w-full p-3 border border-gray-300 rounded-lg" required>
             <button type="submit" name="create_quiz" class="w-full bg-purple-600 text-white p-3 rounded-lg font-bold hover:bg-purple-700 transition duration-300">Créer le quiz</button>
         </form>
 
