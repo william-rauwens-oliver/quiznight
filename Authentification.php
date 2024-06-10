@@ -61,8 +61,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <title>Slide Navbar</title>
     <link rel="stylesheet" type="text/css" href="slide navbar style.css">
     <link href="https://fonts.googleapis.com/css2?family=Jost:wght@500&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body>
+<body class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 min-h-screen flex items-center justify-center">
     <div class="main">      
         <input type="checkbox" id="chk" aria-hidden="true">
 
@@ -100,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         align-items: center;
         min-height: 100vh;
         font-family: 'Jost', sans-serif;
-        background: linear-gradient(to bottom, #0f0c29, #302b63, #24243e);
+      
     }
 
     .main {
