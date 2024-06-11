@@ -1,11 +1,8 @@
 <?php
-// Inclusion du fichier de configuration de la base de données
 include('Config.php');
 
-// Démarrage de la session pour stocker l'état du quiz
 session_start();
 
-// Récupération des thèmes depuis la base de données
 try {
     $stmt_themes = $conn->query("SELECT DISTINCT theme FROM quizzes");
     $themes = $stmt_themes->fetchAll(PDO::FETCH_COLUMN);
@@ -190,7 +187,6 @@ function getOptions($conn, $question_id) {
                     echo "</form>";
                     echo "</div>";
 
-                    // Ajouter un lien pour retourner à l'écran de sélection du thème ou relancer le quiz
                     echo "<div class='return-link'>";
                     echo "<a href='quiz.php'>Retourner à la sélection du thème</a>";
                     echo "</div>";
