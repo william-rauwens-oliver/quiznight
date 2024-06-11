@@ -189,6 +189,11 @@ function getOptions($conn, $question_id) {
                     }
                     echo "</form>";
                     echo "</div>";
+
+                    // Ajouter un lien pour retourner à l'écran de sélection du thème ou relancer le quiz
+                    echo "<div class='return-link'>";
+                    echo "<a href='quiz.php'>Retourner à la sélection du thème</a>";
+                    echo "</div>";
                 } else {
                     echo "<h2>Vous avez terminé le quiz !</h2>";
                     session_destroy();
