@@ -2,43 +2,46 @@
 session_start();
 include('Config.php');
 
-$error = "";
+class User {
+    private $conn;
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    if(isset($_POST['signup'])) {
-        $username = $_POST['username'];
-        $password = $_POST['password'];
-        $confirm_password = $_POST['confirm_password'];
+    public function __construct($conn) {
+        $this->conn = $conn;
+    }
+
+    public function signUp($username, $password, $confirm_password) {
+        $error = "";
 
         if ($password !== $confirm_password) {
             $error = "Les mots de passe ne correspondent pas!";
         } else {
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-            $stmt = $conn->prepare("SELECT * FROM users WHERE username = :username");
+            $stmt = $this->conn->prepare("SELECT * FROM users WHERE username = :username");
             $stmt->bindParam(':username', $username);
             $stmt->execute();
 
             if ($stmt->rowCount() > 0) {
                 $error = "Nom d'utilisateur déjà pris!";
             } else {
-                $stmt = $conn->prepare("INSERT INTO users (username, password) VALUES (:username, :password)");
+                $stmt = $this->conn->prepare("INSERT INTO users (username, password) VALUES (:username, :password)");
                 $stmt->bindParam(':username', $username);
                 $stmt->bindParam(':password', $hashed_password);
                 $stmt->execute();
 
-                $_SESSION['user_id'] = $conn->lastInsertId();
+                $_SESSION['user_id'] = $this->conn->lastInsertId();
                 header('Location: admin.php');
                 exit();
             }
         }
+
+        return $error;
     }
 
-    if(isset($_POST['login'])) {
-        $username = $_POST['login_username'];
-        $password = $_POST['login_password'];
+    public function login($username, $password) {
+        $error = "";
 
-        $stmt = $conn->prepare("SELECT * FROM users WHERE username = :username");
+        $stmt = $this->conn->prepare("SELECT * FROM users WHERE username = :username");
         $stmt->bindParam(':username', $username);
         $stmt->execute();
 
@@ -51,6 +54,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } else {
             $error = "Nom d'utilisateur ou mot de passe invalide";
         }
+
+        return $error;
+    }
+}
+
+$user = new User($conn);
+
+$error = "";
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if(isset($_POST['signup'])) {
+        $username = $_POST['username'];
+        $password = $_POST['password'];
+        $confirm_password = $_POST['confirm_password'];
+        $error = $user->signUp($username, $password, $confirm_password);
+    }
+
+    if(isset($_POST['login'])) {
+        $username = $_POST['login_username'];
+        $password = $_POST['login_password'];
+        $error = $user->login($username, $password);
     }
 }
 ?>
