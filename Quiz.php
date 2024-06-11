@@ -2,12 +2,30 @@
 // Inclusion du fichier de configuration de la base de données
 include('Config.php');
 
+// Démarrage de la session pour stocker l'état du quiz
+session_start();
+
 // Récupération des thèmes depuis la base de données
 try {
     $stmt_themes = $conn->query("SELECT DISTINCT theme FROM quizzes");
     $themes = $stmt_themes->fetchAll(PDO::FETCH_COLUMN);
 } catch (PDOException $e) {
     echo "Erreur PDO : " . $e->getMessage();
+}
+
+function getQuestion($conn, $quiz_id, $question_index) {
+    $stmt_question = $conn->prepare("SELECT * FROM questions WHERE quiz_id = :quiz_id LIMIT 1 OFFSET :offset");
+    $stmt_question->bindParam(':quiz_id', $quiz_id, PDO::PARAM_INT);
+    $stmt_question->bindParam(':offset', $question_index, PDO::PARAM_INT);
+    $stmt_question->execute();
+    return $stmt_question->fetch(PDO::FETCH_ASSOC);
+}
+
+function getOptions($conn, $question_id) {
+    $stmt_options = $conn->prepare("SELECT * FROM options WHERE id = :question_id");
+    $stmt_options->bindParam(':question_id', $question_id, PDO::PARAM_INT);
+    $stmt_options->execute();
+    return $stmt_options->fetchAll(PDO::FETCH_ASSOC);
 }
 
 ?>
@@ -100,6 +118,21 @@ try {
         .theme-btn:hover {
             background-color: #0056b3;
         }
+        .option-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .option-btn:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
@@ -114,33 +147,51 @@ try {
                 $stmt_quiz = $conn->prepare("SELECT * FROM quizzes WHERE theme = :theme");
                 $stmt_quiz->bindParam(':theme', $theme);
                 $stmt_quiz->execute();
-                $quizzes = $stmt_quiz->fetchAll(PDO::FETCH_ASSOC);
+                $quiz = $stmt_quiz->fetch(PDO::FETCH_ASSOC);
 
-                if (!$quizzes) {
+                if (!$quiz) {
                     throw new Exception("Aucun quiz trouvé pour le thème '$theme'.");
                 }
 
-                echo "<h2>Quizzes sur " . ucfirst($theme) . "</h2>";
-                foreach ($quizzes as $quiz) {
+                $quiz_id = $quiz['quiz_id'];
+
+                if (!isset($_SESSION['question_index'])) {
+                    $_SESSION['question_index'] = 0;
+                }
+
+                if (isset($_POST['answer'])) {
+                    $question_id = $_POST['question_id'];
+                    $stmt_correct_option = $conn->prepare("SELECT * FROM options WHERE id = :question_id AND is_correct = 1");
+                    $stmt_correct_option->bindParam(':question_id', $question_id, PDO::PARAM_INT);
+                    $stmt_correct_option->execute();
+                    $correct_option = $stmt_correct_option->fetch(PDO::FETCH_ASSOC);
+
+                    if ($_POST['answer'] == $correct_option['option_id']) {
+                        echo "<p style='color: green;'>Bonne réponse !</p>";
+                    } else {
+                        echo "<p style='color: red;'>Mauvaise réponse. La bonne réponse était : " . htmlspecialchars($correct_option['option_text']) . ".</p>";
+                    }
+
+                    $_SESSION['question_index']++;
+                }
+
+                $question = getQuestion($conn, $quiz_id, $_SESSION['question_index']);
+                
+                if ($question) {
+                    $options = getOptions($conn, $question['id']);
+
                     echo "<div class='quiz'>";
-                    echo "<h3>" . htmlspecialchars($quiz['title']) . "</h3>";
-
-                    // Récupération des questions du quiz en fonction de l'ID du quiz
-                    $stmt_question = $conn->prepare("SELECT * FROM questions WHERE quiz_id = :quiz_id");
-                    $stmt_question->bindParam(':quiz_id', $quiz['quiz_id']);
-                    $stmt_question->execute();
-                    $questions = $stmt_question->fetchAll(PDO::FETCH_ASSOC);
-
-                    if (!$questions) {
-                        throw new Exception("Aucune question trouvée pour le quiz '{$quiz['title']}'.");
+                    echo "<h3>" . htmlspecialchars($question['question_text']) . "</h3>";
+                    echo "<form method='POST'>";
+                    echo "<input type='hidden' name='question_id' value='" . htmlspecialchars($question['id']) . "'>";
+                    foreach ($options as $option) {
+                        echo "<button class='option-btn' type='submit' name='answer' value='" . htmlspecialchars($option['option_id']) . "'>" . htmlspecialchars($option['option_text']) . "</button>";
                     }
-
-                    echo "<ul>";
-                    foreach ($questions as $question) {
-                        echo "<li>" . htmlspecialchars($question['question_text']) . "</li>";
-                    }
-                    echo "</ul>";
+                    echo "</form>";
                     echo "</div>";
+                } else {
+                    echo "<h2>Vous avez terminé le quiz !</h2>";
+                    session_destroy();
                 }
             } else {
                 echo "<h1>Sélectionnez un thème</h1>";
