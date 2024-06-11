@@ -25,13 +25,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $quiz_id = $_POST['quiz_id'];
         $question_text = $_POST['question_text'];
 
-        // Vérifier si un quiz a été sélectionné
         if ($quiz_id === '') {
             echo "Veuillez sélectionner un quiz.";
             exit();
         }
 
-        // Afficher les valeurs des variables pour déboguer
         echo "Quiz ID: " . $quiz_id . "<br>";
         echo "Question Text: " . $question_text . "<br>";
 
