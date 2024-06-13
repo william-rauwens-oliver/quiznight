@@ -1,98 +1,58 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 session_start();
-if (!isset($_SESSION['user_id'])) {
-    header('Location: User.php');
-    exit();
-}
-
 include('BDD.php');
 
-class Admin {
-    private $conn;
 
-    public function __construct($dbConnection) {
-        $this->conn = $dbConnection;
-    }
+include('Classes/Admin/Quiz.php');
+include('Classes/Admin/Question.php');
+include('Classes/Admin/Option.php');
 
-    public function createQuiz($title, $description, $theme) {
-        $stmt = $this->conn->prepare("INSERT INTO quizzes (title, description, theme) VALUES (:title, :description, :theme)");
-        $stmt->bindParam(':title', $title);
-        $stmt->bindParam(':description', $description);
-        $stmt->bindParam(':theme', $theme);
-        $stmt->execute();
-    }
+$quizObj = new Quiz($conn);
+$questionObj = new Question($conn);
+$optionObj = new Option($conn);
 
-    public function createQuestion($quiz_id, $question_text, $answers, $correct_answer) {
-        if (empty($quiz_id)) {
-            throw new Exception("Veuillez sélectionner un quiz.");
-        }
-
-        $this->conn->beginTransaction();
-
-        try {
-            $stmt = $this->conn->prepare("INSERT INTO questions (quiz_id, question_text) VALUES (:quiz_id, :question_text)");
-            $stmt->bindParam(':quiz_id', $quiz_id);
-            $stmt->bindParam(':question_text', $question_text);
-            $stmt->execute();
-
-            $question_id = $this->conn->lastInsertId();
-
-            $stmt = $this->conn->prepare("INSERT INTO options (id, option_text, is_correct) VALUES (:id, :option_text, :is_correct)");
-            for ($i = 0; $i < 4; $i++) {
-                $is_correct = ($i + 1 == $correct_answer) ? 1 : 0;
-                $stmt->bindParam(':id', $question_id);
-                $stmt->bindParam(':option_text', $answers[$i]);
-                $stmt->bindParam(':is_correct', $is_correct);
-                $stmt->execute();
-            }
-
-            $this->conn->commit();
-        } catch (Exception $e) {
-            $this->conn->rollBack();
-            throw new Exception("Failed: " . $e->getMessage());
-        }
-    }
-
-    public function getQuizzes() {
-        $stmt = $this->conn->prepare("SELECT * FROM quizzes");
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-}
-
-$admin = new Admin($conn);
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    try {
-        if (isset($_POST['create_quiz'])) {
-            $title = $_POST['title'];
-            $description = $_POST['description'];
-            $theme = $_POST['theme'];
+    if (isset($_POST['create_quiz'])) {
+        $title = $_POST['title'];
+        $description = $_POST['description'];
+        $theme = $_POST['theme'];
 
-            $admin->createQuiz($title, $description, $theme);
-            header('Location: admin.php');
-            exit();
-        } elseif (isset($_POST['create_question'])) {
-            $quiz_id = $_POST['quiz_id'];
-            $question_text = $_POST['question_text'];
-            $answers = [
-                $_POST['answer1'],
-                $_POST['answer2'],
-                $_POST['answer3'],
-                $_POST['answer4']
-            ];
-            $correct_answer = $_POST['correct_answer'];
+        $quizObj->createQuiz($title, $description, $theme);
 
-            $admin->createQuestion($quiz_id, $question_text, $answers, $correct_answer);
-            header('Location: admin.php');
-            exit();
+        header('Location: admin.php');
+        exit();
+    }
+
+    elseif (isset($_POST['create_question'])) {
+        $quiz_id = $_POST['quiz_id'];
+        $question_text = $_POST['question_text'];
+        $answers = [
+            $_POST['answer1'],
+            $_POST['answer2'],
+            $_POST['answer3'],
+            $_POST['answer4']
+        ];
+        $correct_answer = $_POST['correct_answer'];
+
+        $question_id = $questionObj->createQuestion($quiz_id, $question_text);
+
+        for ($i = 0; $i < 4; $i++) {
+            $is_correct = ($i + 1 == $correct_answer) ? 1 : 0;
+            $option_text = $answers[$i];
+            $optionObj->addOption($question_id, $option_text, $is_correct);
         }
-    } catch (Exception $e) {
-        echo $e->getMessage();
+
+
+        header('Location: admin.php');
+        exit();
     }
 }
 
-$quizzes = $admin->getQuizzes();
+$quizzes = $quizObj->getAllQuizzes();
+
 ?>
 
 <!DOCTYPE html>

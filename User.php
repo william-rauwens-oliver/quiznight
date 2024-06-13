@@ -1,63 +1,6 @@
 <?php
-session_start();
 include('BDD.php');
-
-class User {
-    private $conn;
-
-    public function __construct($conn) {
-        $this->conn = $conn;
-    }
-
-    public function signUp($username, $password, $confirm_password) {
-        $error = "";
-
-        if ($password !== $confirm_password) {
-            $error = "Les mots de passe ne correspondent pas!";
-        } else {
-            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-
-            $stmt = $this->conn->prepare("SELECT * FROM users WHERE username = :username");
-            $stmt->bindParam(':username', $username);
-            $stmt->execute();
-
-            if ($stmt->rowCount() > 0) {
-                $error = "Nom d'utilisateur déjà pris!";
-            } else {
-                $stmt = $this->conn->prepare("INSERT INTO users (username, password) VALUES (:username, :password)");
-                $stmt->bindParam(':username', $username);
-                $stmt->bindParam(':password', $hashed_password);
-                $stmt->execute();
-
-                $_SESSION['user_id'] = $this->conn->lastInsertId();
-                header('Location: admin.php');
-                exit();
-            }
-        }
-
-        return $error;
-    }
-
-    public function login($username, $password) {
-        $error = "";
-
-        $stmt = $this->conn->prepare("SELECT * FROM users WHERE username = :username");
-        $stmt->bindParam(':username', $username);
-        $stmt->execute();
-
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($user && password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['id'];
-            header('Location: admin.php');
-            exit();
-        } else {
-            $error = "Nom d'utilisateur ou mot de passe invalide";
-        }
-
-        return $error;
-    }
-}
+require_once 'Classes/User/User.php';
 
 $user = new User($conn);
 
@@ -66,9 +9,10 @@ $error = "";
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if(isset($_POST['signup'])) {
         $username = $_POST['username'];
+        $email = $_POST['email'];
         $password = $_POST['password'];
         $confirm_password = $_POST['confirm_password'];
-        $error = $user->signUp($username, $password, $confirm_password);
+        $error = $user->signUp($username, $email, $password, $confirm_password);
     }
 
     if(isset($_POST['login'])) {
@@ -125,7 +69,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         align-items: center;
         min-height: 100vh;
         font-family: 'Jost', sans-serif;
-      
     }
 
     .main {

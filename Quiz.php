@@ -2,9 +2,9 @@
 include('BDD.php');
 session_start();
 
-require_once 'Classes/Question.php';
-require_once 'Classes/Quiz.php';
-require_once 'Classes/Options.php';
+require_once 'Classes/Client/Question.php';
+require_once 'Classes/Client/Quiz.php';
+require_once 'Classes/Client/Options.php';
 
 $quiz = new Quiz($conn);
 $question = new Question($conn);
