@@ -1,5 +1,5 @@
 <?php
-include('Config.php');
+include('BDD.php');
 
 session_start();
 
