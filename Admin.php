@@ -32,34 +32,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         ];
         $correct_answer = $_POST['correct_answer'];
 
-        if ($quiz_id === '') {
+        if (empty($quiz_id)) {
             echo "Veuillez sélectionner un quiz.";
             exit();
         }
 
         $conn->beginTransaction();
-        
+
         try {
-            // Insertion de la question
             $stmt = $conn->prepare("INSERT INTO questions (quiz_id, question_text) VALUES (:quiz_id, :question_text)");
             $stmt->bindParam(':quiz_id', $quiz_id);
             $stmt->bindParam(':question_text', $question_text);
             $stmt->execute();
-            
+
             $question_id = $conn->lastInsertId();
-            
-            // Insertion des réponses
-            $stmt = $conn->prepare("INSERT INTO answers (question_id, answer_text, is_correct) VALUES (:question_id, :answer_text, :is_correct)");
+
+            $stmt = $conn->prepare("INSERT INTO options (id, option_text, is_correct) VALUES (:id, :option_text, :is_correct)");
             for ($i = 0; $i < 4; $i++) {
                 $is_correct = ($i + 1 == $correct_answer) ? 1 : 0;
-                $stmt->bindParam(':question_id', $question_id);
-                $stmt->bindParam(':answer_text', $answers[$i]);
+                $stmt->bindParam(':id', $question_id);
+                $stmt->bindParam(':option_text', $answers[$i]);
                 $stmt->bindParam(':is_correct', $is_correct);
                 $stmt->execute();
             }
-            
+
             $conn->commit();
-            
+
             header('Location: admin.php');
             exit();
         } catch (Exception $e) {
@@ -96,8 +94,7 @@ $quizzes = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <select name="quiz_id" id="quiz_id" class="w-full p-3 border border-gray-300 rounded-lg" required>
                 <option value="" disabled selected>Sélectionnez un quiz</option>
                 <?php foreach ($quizzes as $quiz): ?>
-                    <?php $selected = ($_POST['quiz_id'] == $quiz['id']) ? 'selected' : ''; ?>
-                    <option value="<?php echo $quiz['id']; ?>" <?php echo $selected; ?>><?php echo htmlspecialchars($quiz['title']); ?></option>
+                    <option value="<?php echo $quiz['quiz_id']; ?>"><?php echo htmlspecialchars($quiz['title']); ?></option>
                 <?php endforeach; ?>
             </select>
             <?php if ($_SERVER['REQUEST_METHOD'] == 'POST' && empty($_POST['quiz_id'])): ?>
