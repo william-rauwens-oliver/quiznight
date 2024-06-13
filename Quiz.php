@@ -1,62 +1,10 @@
 <?php
 include('BDD.php');
-
 session_start();
 
-class Question {
-    private $conn;
-
-    public function __construct($conn) {
-        $this->conn = $conn;
-    }
-
-    public function getQuestion($quiz_id, $question_index) {
-        $stmt_question = $this->conn->prepare("SELECT * FROM questions WHERE quiz_id = :quiz_id LIMIT 1 OFFSET :offset");
-        $stmt_question->bindParam(':quiz_id', $quiz_id, PDO::PARAM_INT);
-        $stmt_question->bindParam(':offset', $question_index, PDO::PARAM_INT);
-        $stmt_question->execute();
-        return $stmt_question->fetch(PDO::FETCH_ASSOC);
-    }
-}
-
-class Quiz {
-    private $conn;
-
-    public function __construct($conn) {
-        $this->conn = $conn;
-    }
-
-    public function getThemes() {
-        try {
-            $stmt_themes = $this->conn->query("SELECT DISTINCT theme FROM quizzes");
-            return $stmt_themes->fetchAll(PDO::FETCH_COLUMN);
-        } catch (PDOException $e) {
-            throw new Exception("Erreur PDO : " . $e->getMessage());
-        }
-    }
-
-    public function getQuizByTheme($theme) {
-        $stmt_quiz = $this->conn->prepare("SELECT * FROM quizzes WHERE theme = :theme");
-        $stmt_quiz->bindParam(':theme', $theme);
-        $stmt_quiz->execute();
-        return $stmt_quiz->fetch(PDO::FETCH_ASSOC);
-    }
-}
-
-class Options {
-    private $conn;
-
-    public function __construct($conn) {
-        $this->conn = $conn;
-    }
-
-    public function getOptions($question_id) {
-        $stmt_options = $this->conn->prepare("SELECT * FROM options WHERE id = :question_id");
-        $stmt_options->bindParam(':question_id', $question_id, PDO::PARAM_INT);
-        $stmt_options->execute();
-        return $stmt_options->fetchAll(PDO::FETCH_ASSOC);
-    }
-}
+require_once 'Classes/Question.php';
+require_once 'Classes/Quiz.php';
+require_once 'Classes/Options.php';
 
 $quiz = new Quiz($conn);
 $question = new Question($conn);
@@ -151,7 +99,6 @@ try {
     echo "Erreur : " . $e->getMessage();
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
