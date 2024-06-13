@@ -42,7 +42,7 @@
             padding: 20px;
             margin-bottom: 20px;
             background-color: #f9f9f9;
-            text-align: left; /* Alignement du texte à gauche à l'intérieur du quiz */
+            text-align: left;
         }
         .quiz h3 {
             margin-bottom: 10px;
@@ -65,8 +65,8 @@
             border-radius: 4px;
             cursor: pointer;
             transition: background-color 0.3s ease;
-            text-decoration: none; /* Supprime le soulignement par défaut des liens */
-            display: inline-block; /* Pour que les liens soient affichés en ligne */
+            text-decoration: none;
+            display: inline-block;
         }
         .theme-btn:hover {
             background-color: #0056b3;
