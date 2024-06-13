@@ -1,6 +1,6 @@
 <?php
 session_start();
-include('Config.php');
+include('BDD.php');
 
 class User {
     private $conn;

@@ -50,7 +50,7 @@
         <a href="quiz.php" class="play-button" style="display: block; margin: 0 auto;">Jouer</button></a>
         <ul class="quiz-list">
             <?php
-            include('Config.php');
+            include('BDD.php');
 
             $stmt = $conn->prepare("SELECT * FROM quizzes");
             $stmt->execute();
