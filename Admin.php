@@ -24,22 +24,48 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } elseif (isset($_POST['create_question'])) {
         $quiz_id = $_POST['quiz_id'];
         $question_text = $_POST['question_text'];
+        $answers = [
+            $_POST['answer1'],
+            $_POST['answer2'],
+            $_POST['answer3'],
+            $_POST['answer4']
+        ];
+        $correct_answer = $_POST['correct_answer'];
 
         if ($quiz_id === '') {
             echo "Veuillez sélectionner un quiz.";
             exit();
         }
 
-        echo "Quiz ID: " . $quiz_id . "<br>";
-        echo "Question Text: " . $question_text . "<br>";
-
-        $stmt = $conn->prepare("INSERT INTO questions (quiz_id, question_text) VALUES (:quiz_id, :question_text)");
-        $stmt->bindParam(':quiz_id', $quiz_id);
-        $stmt->bindParam(':question_text', $question_text);
-        $stmt->execute();
-
-        header('Location: admin.php');
-        exit();
+        $conn->beginTransaction();
+        
+        try {
+            // Insertion de la question
+            $stmt = $conn->prepare("INSERT INTO questions (quiz_id, question_text) VALUES (:quiz_id, :question_text)");
+            $stmt->bindParam(':quiz_id', $quiz_id);
+            $stmt->bindParam(':question_text', $question_text);
+            $stmt->execute();
+            
+            $question_id = $conn->lastInsertId();
+            
+            // Insertion des réponses
+            $stmt = $conn->prepare("INSERT INTO answers (question_id, answer_text, is_correct) VALUES (:question_id, :answer_text, :is_correct)");
+            for ($i = 0; $i < 4; $i++) {
+                $is_correct = ($i + 1 == $correct_answer) ? 1 : 0;
+                $stmt->bindParam(':question_id', $question_id);
+                $stmt->bindParam(':answer_text', $answers[$i]);
+                $stmt->bindParam(':is_correct', $is_correct);
+                $stmt->execute();
+            }
+            
+            $conn->commit();
+            
+            header('Location: admin.php');
+            exit();
+        } catch (Exception $e) {
+            $conn->rollBack();
+            echo "Failed: " . $e->getMessage();
+        }
     }
 }
 
@@ -78,6 +104,17 @@ $quizzes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <p class="text-red-500">Veuillez sélectionner un quiz.</p>
             <?php endif; ?>
             <textarea name="question_text" placeholder="Texte de la question" class="w-full p-3 border border-gray-300 rounded-lg" required></textarea>
+            <input type="text" name="answer1" placeholder="Réponse 1" class="w-full p-3 border border-gray-300 rounded-lg" required>
+            <input type="text" name="answer2" placeholder="Réponse 2" class="w-full p-3 border border-gray-300 rounded-lg" required>
+            <input type="text" name="answer3" placeholder="Réponse 3" class="w-full p-3 border border-gray-300 rounded-lg" required>
+            <input type="text" name="answer4" placeholder="Réponse 4" class="w-full p-3 border border-gray-300 rounded-lg" required>
+            <label for="correct_answer" class="block text-gray-700 font-medium">Réponse correcte :</label>
+            <select name="correct_answer" id="correct_answer" class="w-full p-3 border border-gray-300 rounded-lg" required>
+                <option value="1">Réponse 1</option>
+                <option value="2">Réponse 2</option>
+                <option value="3">Réponse 3</option>
+                <option value="4">Réponse 4</option>
+            </select>
             <button type="submit" name="create_question" class="w-full bg-purple-600 text-white p-3 rounded-lg font-bold hover:bg-purple-700 transition duration-300">Créer la question</button>
         </form>
 
