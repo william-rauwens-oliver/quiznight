@@ -7,47 +7,37 @@ if (!isset($_SESSION['user_id'])) {
 
 include('BDD.php');
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    if (isset($_POST['create_quiz'])) {
-        $title = $_POST['title'];
-        $description = $_POST['description'];
-        $theme = $_POST['theme'];
+class Admin {
+    private $conn;
 
-        $stmt = $conn->prepare("INSERT INTO quizzes (title, description, theme) VALUES (:title, :description, :theme)");
+    public function __construct($dbConnection) {
+        $this->conn = $dbConnection;
+    }
+
+    public function createQuiz($title, $description, $theme) {
+        $stmt = $this->conn->prepare("INSERT INTO quizzes (title, description, theme) VALUES (:title, :description, :theme)");
         $stmt->bindParam(':title', $title);
         $stmt->bindParam(':description', $description);
         $stmt->bindParam(':theme', $theme);
         $stmt->execute();
+    }
 
-        header('Location: admin.php');
-        exit();
-    } elseif (isset($_POST['create_question'])) {
-        $quiz_id = $_POST['quiz_id'];
-        $question_text = $_POST['question_text'];
-        $answers = [
-            $_POST['answer1'],
-            $_POST['answer2'],
-            $_POST['answer3'],
-            $_POST['answer4']
-        ];
-        $correct_answer = $_POST['correct_answer'];
-
+    public function createQuestion($quiz_id, $question_text, $answers, $correct_answer) {
         if (empty($quiz_id)) {
-            echo "Veuillez sélectionner un quiz.";
-            exit();
+            throw new Exception("Veuillez sélectionner un quiz.");
         }
 
-        $conn->beginTransaction();
+        $this->conn->beginTransaction();
 
         try {
-            $stmt = $conn->prepare("INSERT INTO questions (quiz_id, question_text) VALUES (:quiz_id, :question_text)");
+            $stmt = $this->conn->prepare("INSERT INTO questions (quiz_id, question_text) VALUES (:quiz_id, :question_text)");
             $stmt->bindParam(':quiz_id', $quiz_id);
             $stmt->bindParam(':question_text', $question_text);
             $stmt->execute();
 
-            $question_id = $conn->lastInsertId();
+            $question_id = $this->conn->lastInsertId();
 
-            $stmt = $conn->prepare("INSERT INTO options (id, option_text, is_correct) VALUES (:id, :option_text, :is_correct)");
+            $stmt = $this->conn->prepare("INSERT INTO options (id, option_text, is_correct) VALUES (:id, :option_text, :is_correct)");
             for ($i = 0; $i < 4; $i++) {
                 $is_correct = ($i + 1 == $correct_answer) ? 1 : 0;
                 $stmt->bindParam(':id', $question_id);
@@ -56,20 +46,53 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $stmt->execute();
             }
 
-            $conn->commit();
-
-            header('Location: admin.php');
-            exit();
+            $this->conn->commit();
         } catch (Exception $e) {
-            $conn->rollBack();
-            echo "Failed: " . $e->getMessage();
+            $this->conn->rollBack();
+            throw new Exception("Failed: " . $e->getMessage());
         }
+    }
+
+    public function getQuizzes() {
+        $stmt = $this->conn->prepare("SELECT * FROM quizzes");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
 
-$stmt = $conn->prepare("SELECT * FROM quizzes");
-$stmt->execute();
-$quizzes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$admin = new Admin($conn);
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    try {
+        if (isset($_POST['create_quiz'])) {
+            $title = $_POST['title'];
+            $description = $_POST['description'];
+            $theme = $_POST['theme'];
+
+            $admin->createQuiz($title, $description, $theme);
+            header('Location: admin.php');
+            exit();
+        } elseif (isset($_POST['create_question'])) {
+            $quiz_id = $_POST['quiz_id'];
+            $question_text = $_POST['question_text'];
+            $answers = [
+                $_POST['answer1'],
+                $_POST['answer2'],
+                $_POST['answer3'],
+                $_POST['answer4']
+            ];
+            $correct_answer = $_POST['correct_answer'];
+
+            $admin->createQuestion($quiz_id, $question_text, $answers, $correct_answer);
+            header('Location: admin.php');
+            exit();
+        }
+    } catch (Exception $e) {
+        echo $e->getMessage();
+    }
+}
+
+$quizzes = $admin->getQuizzes();
 ?>
 
 <!DOCTYPE html>
