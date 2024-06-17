@@ -1,10 +1,14 @@
 <?php
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+
 session_start();
+if (!isset($_SESSION['user_id'])) {
+    header('Location: User.php');
+    exit();
+}
+
 include('BDD.php');
-
-
 include('Classes/Admin/Quiz.php');
 include('Classes/Admin/Question.php');
 include('Classes/Admin/Option.php');
@@ -12,7 +16,6 @@ include('Classes/Admin/Option.php');
 $quizObj = new Quiz($conn);
 $questionObj = new Question($conn);
 $optionObj = new Option($conn);
-
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['create_quiz'])) {
@@ -24,9 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         header('Location: admin.php');
         exit();
-    }
-
-    elseif (isset($_POST['create_question'])) {
+    } elseif (isset($_POST['create_question'])) {
         $quiz_id = $_POST['quiz_id'];
         $question_text = $_POST['question_text'];
         $answers = [
@@ -45,14 +46,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $optionObj->addOption($question_id, $option_text, $is_correct);
         }
 
-
         header('Location: admin.php');
         exit();
     }
 }
 
 $quizzes = $quizObj->getAllQuizzes();
-
 ?>
 
 <!DOCTYPE html>
